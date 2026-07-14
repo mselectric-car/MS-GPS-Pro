@@ -568,7 +568,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget barometerScreen() {
     final chartSamples = samples.isEmpty
-        ? [const PressureSample(nullTime, 1013.25)]
+        ? [PressureSample(DateTime.fromMillisecondsSinceEpoch(0), 1013.25)]
         : samples;
     final values = chartSamples.map((e) => e.value).toList();
     final minY = values.reduce(math.min) - 1.2;
@@ -1185,7 +1185,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-const DateTime nullTime = DateTime.fromMillisecondsSinceEpoch(0);
 
 class PremiumCompassPainter extends CustomPainter {
   PremiumCompassPainter(this.heading, this.scheme);
