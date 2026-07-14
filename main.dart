@@ -1066,12 +1066,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 18),
         sectionTitle(tr('O APLIKACIJI', 'ABOUT')),
-        const AboutListTile(
-          icon: Icon(Icons.explore),
-          applicationIcon: Icon(Icons.explore, size: 42),
-          applicationName: 'Sensor Compass Pro',
-          applicationVersion: '3.0.0',
-          applicationLegalese: 'MS Tech',
+        settingsTile(
+          Icons.info_outline,
+          tr('O aplikaciji', 'About app'),
+          'Sensor Compass Pro 3.1.0',
+          onTap: showCustomAboutDialog,
         ),
       ],
     );
@@ -1264,6 +1263,89 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(title),
         value: value,
         onChanged: onChanged,
+      ),
+    );
+  }
+
+  Future<void> showCustomAboutDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 78,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                  ),
+                  child: Icon(
+                    Icons.explore,
+                    size: 46,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Sensor Compass Pro',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  tr('Verzija 3.1.0', 'Version 3.1.0'),
+                  style: const TextStyle(color: Colors.white60),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  tr(
+                    'Profesionalni kompas, barometar, altimetar i GPS sa online i offline mapom.',
+                    'Professional compass, barometer, altimeter and GPS with online and offline maps.',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 18),
+                const Divider(),
+                const SizedBox(height: 8),
+                const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.business),
+                  title: Text('MS Tech'),
+                  subtitle: Text('© 2026 MS Tech'),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.shield_outlined),
+                  title: Text(tr('Privatnost', 'Privacy')),
+                  subtitle: Text(
+                    tr(
+                      'Aplikacija ne šalje podatke senzora na server.',
+                      'The app does not send sensor data to a server.',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(tr('Zatvori', 'Close')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
