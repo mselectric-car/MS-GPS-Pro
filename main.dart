@@ -6,6 +6,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -146,6 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool gpsAvailable = false;
   bool keepScreenOn = false;
   bool autoCalibration = true;
+  bool onlineMap = true;
+  bool satelliteMap = false;
 
   String? gpsMessage;
 
@@ -717,22 +721,174 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget locationScreen() {
+    final hasPosition = latitude != null && longitude != null;
+    final currentPoint = LatLng(
+      latitude ?? 42.4304,
+      longitude ?? 19.2594,
+    );
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Container(
-          height: 290,
+          padding: const EdgeInsets.all(12),
           decoration: panelDecoration(),
-          child: CustomPaint(
-            painter: OfflineMapPainter(
-              latitude: latitude,
-              longitude: longitude,
-              colorScheme: Theme.of(context).colorScheme,
-            ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment<bool>(
+                          value: false,
+                          icon: const Icon(Icons.cloud_off),
+                          label: Text(tr('Offline', 'Offline')),
+                        ),
+                        ButtonSegment<bool>(
+                          value: true,
+                          icon: const Icon(Icons.public),
+                          label: Text(tr('Online', 'Online')),
+                        ),
+                      ],
+                      selected: {onlineMap},
+                      onSelectionChanged: (values) {
+                        setState(() => onlineMap = values.first);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              if (onlineMap) ...[
+                const SizedBox(height: 10),
+                SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment<bool>(
+                      value: false,
+                      icon: const Icon(Icons.map_outlined),
+                      label: Text(tr('Mapa', 'Map')),
+                    ),
+                    ButtonSegment<bool>(
+                      value: true,
+                      icon: const Icon(Icons.satellite_alt),
+                      label: Text(tr('Satelit', 'Satellite')),
+                    ),
+                  ],
+                  selected: {satelliteMap},
+                  onSelectionChanged: (values) {
+                    setState(() => satelliteMap = values.first);
+                  },
+                ),
+              ],
+            ],
           ),
         ),
         const SizedBox(height: 14),
-        if (gpsMessage != null)
+        Container(
+          height: 360,
+          clipBehavior: Clip.antiAlias,
+          decoration: panelDecoration(),
+          child: onlineMap
+              ? FlutterMap(
+                  key: ValueKey(
+                    '${satelliteMap}_${latitude?.toStringAsFixed(5)}_${longitude?.toStringAsFixed(5)}',
+                  ),
+                  options: MapOptions(
+                    initialCenter: currentPoint,
+                    initialZoom: hasPosition ? 16 : 12,
+                    minZoom: 2,
+                    maxZoom: satelliteMap ? 19 : 18,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: satelliteMap
+                          ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                          : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.mstech.sensor_compass',
+                      maxZoom: satelliteMap ? 19 : 18,
+                    ),
+                    if (hasPosition)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: currentPoint,
+                            width: 64,
+                            height: 64,
+                            child: const Icon(
+                              Icons.my_location,
+                              size: 44,
+                              color: Colors.blueAccent,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.white,
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    Positioned(
+                      left: 8,
+                      bottom: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 4,
+                        ),
+                        color: Colors.black54,
+                        child: Text(
+                          satelliteMap
+                              ? 'Tiles © Esri'
+                              : '© OpenStreetMap contributors',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : CustomPaint(
+                  painter: OfflineMapPainter(
+                    latitude: latitude,
+                    longitude: longitude,
+                    colorScheme: Theme.of(context).colorScheme,
+                  ),
+                ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: panelDecoration(),
+          child: Row(
+            children: [
+              Icon(
+                onlineMap ? Icons.wifi : Icons.cloud_off,
+                color: onlineMap
+                    ? Colors.lightGreenAccent
+                    : Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  onlineMap
+                      ? tr(
+                          'Online mapa koristi internet. Možeš izabrati običnu ili satelitsku mapu.',
+                          'Online map uses the internet. You can choose standard or satellite view.',
+                        )
+                      : tr(
+                          'Offline prikaz koristi samo GPS senzore i ne preuzima mapu.',
+                          'Offline view uses only GPS sensors and does not download map tiles.',
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (gpsMessage != null) ...[
+          const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: panelDecoration(),
@@ -748,6 +904,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+        ],
         const SizedBox(height: 10),
         Row(
           children: [
@@ -789,17 +946,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: panelDecoration(),
-          child: Text(
-            tr(
-              'Offline prikaz ne preuzima internet mapu. Prikazuje položaj, koordinate, visinu i tačnost direktno iz GPS senzora.',
-              'The offline view does not download an internet map. It shows position, coordinates, altitude and accuracy directly from GPS.',
-            ),
-          ),
         ),
       ],
     );
