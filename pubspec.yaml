@@ -1,7 +1,7 @@
 name: sensor_compass
 description: Offline compass, barometer and altimeter.
 publish_to: "none"
-version: 3.0.0+5
+version: 3.1.0+6
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -14,6 +14,8 @@ dependencies:
   sensors_plus: ^7.0.0
   shared_preferences: ^2.5.3
   fl_chart: ^1.0.0
+  flutter_map: ^8.2.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_test:
