@@ -1,0 +1,83 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Preserve application files
+        run: |
+          cp main.dart /tmp/main.dart
+          cp pubspec.yaml /tmp/pubspec.yaml
+          mkdir -p /tmp/app-assets
+          cp -R assets/. /tmp/app-assets/
+
+      - name: Generate Android project
+        run: |
+          flutter create --platforms=android --org com.mstech --project-name sensor_compass .
+
+      - name: Restore application files
+        run: |
+          mkdir -p lib assets
+          cp /tmp/main.dart lib/main.dart
+          cp /tmp/pubspec.yaml pubspec.yaml
+          cp -R /tmp/app-assets/. assets/
+          rm -rf test
+
+      - name: Configure Android app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+
+          permissions = (
+              '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n'
+              '<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n'
+          )
+
+          if "ACCESS_FINE_LOCATION" not in text:
+              text = text.replace("<application", permissions + "<application", 1)
+
+          text = text.replace(
+              'android:label="sensor_compass"',
+              'android:label="Sensor Compass Pro"',
+          )
+
+          manifest.write_text(text)
+          PY
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate launcher icon
+        run: dart run flutter_launcher_icons
+
+      - name: Analyze application
+        run: flutter analyze lib/main.dart
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sensor-Compass-Pro-v5
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
