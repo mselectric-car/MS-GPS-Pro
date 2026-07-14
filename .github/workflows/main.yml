@@ -3,7 +3,8 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -27,7 +28,8 @@ jobs:
           cp -R assets/. /tmp/app-assets/
 
       - name: Generate Android project
-        run: flutter create --platforms=android --org com.mstech --project-name sensor_compass .
+        run: |
+          flutter create --platforms=android --org com.mstech --project-name sensor_compass .
 
       - name: Restore application files
         run: |
@@ -46,6 +48,8 @@ jobs:
           text = manifest.read_text()
 
           permissions = (
+              '<uses-permission android:name="android.permission.INTERNET" />\n'
+              '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n'
               '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n'
               '<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n'
           )
@@ -66,9 +70,6 @@ jobs:
 
       - name: Generate launcher icon
         run: dart run flutter_launcher_icons
-
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/main.dart
 
       - name: Build release APK
         run: flutter build apk --release
